@@ -1,0 +1,63 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Estilo global para fundo suave */
+body {
+  @apply bg-slate-100 text-slate-800;
+}
+
+@layer components {
+  .input-padrao {
+    @apply w-full p-2 border border-slate-300 rounded focus:ring-blue-500 outline-none transition;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-slate-600 mb-1;
+  }
+
+  .btn-primary {
+    @apply bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700 transition;
+  }
+
+  .btn-secondary {
+    @apply bg-white border border-slate-300 text-slate-600 font-bold py-2 px-4 rounded hover:bg-slate-50 transition;
+  }
+}
+
+/* Esconde o cupom visualmente na tela */
+.area-impressao-oculta {
+  display: none;
+}
+
+@media print {
+
+  /* Esconde tudo na tela */
+  body * {
+    visibility: hidden;
+  }
+
+  /* 2. Torna visível APENAS a área do cupom e seus filhos */
+  .area-impressao-oculta,
+  .area-impressao-oculta * {
+    visibility: visible;
+    display: block !important;
+    /* Força sair do display:none */
+  }
+
+  /* 3. Posiciona o cupom no topo da folha de papel */
+  .area-impressao-oculta {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  /* Remove margens automáticas do navegador*/
+  @page {
+    margin: 0;
+    size: auto;
+  }
+}

@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Explorador de Arquitetura PDV</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Internal Styles for Specific Chart Constraints & Unicode Icons -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Neutral Light Background */
+            color: #334155; /* Neutral Dark Text */
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Chart Container Strict Styling Rules */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px; /* Max width for large screens */
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px; /* Base height */
+            max-height: 400px;
+        }
+        
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+
+        /* Flow Diagram Connectors using CSS Borders */
+        .flow-arrow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: #94a3b8;
+        }
+
+        /* Card Hover Effects */
+        .interactive-card {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .interactive-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            border-color: #3b82f6;
+        }
+
+        .active-tab {
+            border-bottom: 2px solid #3b82f6;
+            color: #1d4ed8;
+        }
+    </style>
+
+    <!-- Placeholder Comments Required by Prompt -->
+    <!-- Chosen Palette: Warm Neutrals & Professional Blue. Background #f8fafc (Slate-50), Text #334155 (Slate-700), Accents #3b82f6 (Blue-500) and #f59e0b (Amber-500) for highlights. -->
+    
+    <!-- Application Structure Plan: 
+         1. Hero Section: High-level overview of the API project.
+         2. Architecture Flow: An interactive visual representation of the MVC pattern + Middlewares, explaining how a request travels.
+         3. Role & Security Matrix: An interactive grid allowing users to filter routes/features based on user roles (Gerente, Supervisor, Caixa).
+         4. Module Explorer: Detailed tabs for each route file (Auth, Produtos, Vendas, etc.), showing logic and validation rules.
+         5. Simulated Dashboard: A "Live Preview" of what the API's reporting endpoints would output (Charts), to visualize the business value.
+         This structure moves from abstract technical concepts to concrete implementation details, ending with the business result.
+    -->
+    
+    <!-- Visualization & Content Choices:
+         - Architecture Flow: CSS Flexbox with Unicode arrows. Goal: Explain the "Request Flow" logic from the GUIA_DE_ESTUDO.
+         - Role Matrix: Interactive HTML Table with JS filtering. Goal: Visualize the RBAC (Role Based Access Control) logic found in middleware files.
+         - Module Explorer: Tabbed Interface. Goal: Organize the dense route information into consumable chunks without page reloads.
+         - Simulated Dashboard: Chart.js Bar and Doughnut charts. Goal: Demonstrate the output of 'relatoriosRoutes.js' (Quantitative Data).
+         - CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+</head>
+<body class="antialiased">
+
+    <!-- Navigation -->
+    <nav class="bg-white border-b border-slate-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <span class="text-2xl mr-2">📦</span>
+                    <span class="font-bold text-xl tracking-tight text-slate-800">DocuSystem PDV</span>
+                </div>
+                <div class="hidden md:flex items-center space-x-8">
+                    <button onclick="scrollToSection('architecture')" class="text-slate-600 hover:text-blue-600 font-medium transition">Arquitetura</button>
+                    <button onclick="scrollToSection('roles')" class="text-slate-600 hover:text-blue-600 font-medium transition">Permissões</button>
+                    <button onclick="scrollToSection('modules')" class="text-slate-600 hover:text-blue-600 font-medium transition">Módulos</button>
+                    <button onclick="scrollToSection('dashboard')" class="text-slate-600 hover:text-blue-600 font-medium transition">Simulação</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-16">
+
+        <!-- Header / Intro -->
+        <header class="text-center space-y-4">
+            <h1 class="text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+                API de Gestão de Vendas e Estoque
+            </h1>
+            <p class="text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed">
+                Uma exploração interativa da arquitetura backend, fluxos de segurança e lógica de negócios do sistema PDV. 
+                Navegue pelas camadas da aplicação para entender como dados, usuários e regras de negócio se conectam.
+            </p>
+            <div class="flex justify-center gap-4 pt-4">
+                <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-semibold border border-blue-200">Node.js & Express</div>
+                <div class="bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-semibold border border-green-200">MongoDB</div>
+                <div class="bg-amber-50 text-amber-700 px-4 py-2 rounded-full text-sm font-semibold border border-amber-200">JWT Auth</div>
+            </div>
+        </header>
+
+        <!-- Section 1: Architecture & Flow -->
+        <section id="architecture" class="scroll-mt-24">
+            <div class="mb-6 border-l-4 border-blue-500 pl-4">
+                <h2 class="text-2xl font-bold text-slate-800">Arquitetura do Sistema</h2>
+                <p class="text-slate-600 mt-2">
+                    Visualização do ciclo de vida de uma requisição dentro da API. Clique nos passos para ver detalhes da implementação baseados no <code>GUIA_DE_ESTUDO.md</code>.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-8">
+                <!-- Flow Diagram -->
+                <div class="flex flex-col md:flex-row justify-between items-center gap-4 relative">
+                    
+                    <!-- Client -->
+                    <div class="flow-step group w-full md:w-1/5" onclick="showFlowDetail('client')">
+                        <div class="interactive-card bg-slate-50 border border-slate-300 rounded-lg p-6 text-center h-full hover:bg-white">
+                            <div class="text-3xl mb-2">💻</div>
+                            <h3 class="font-bold text-slate-700">Cliente</h3>
+                            <p class="text-xs text-slate-500 mt-2">Frontend / Postman</p>
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow rotate-90 md:rotate-0">➝</div>
+
+                    <!-- Server/Routes -->
+                    <div class="flow-step group w-full md:w-1/5" onclick="showFlowDetail('routes')">
+                        <div class="interactive-card bg-slate-50 border border-slate-300 rounded-lg p-6 text-center h-full hover:bg-white">
+                            <div class="text-3xl mb-2">🚦</div>
+                            <h3 class="font-bold text-slate-700">Rotas</h3>
+                            <p class="text-xs text-slate-500 mt-2">/api/vendas</p>
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow rotate-90 md:rotate-0">➝</div>
+
+                    <!-- Middleware -->
+                    <div class="flow-step group w-full md:w-1/5" onclick="showFlowDetail('middleware')">
+                        <div class="interactive-card bg-amber-50 border border-amber-200 rounded-lg p-6 text-center h-full hover:bg-amber-100">
+                            <div class="text-3xl mb-2">🛡️</div>
+                            <h3 class="font-bold text-slate-700">Middleware</h3>
+                            <p class="text-xs text-slate-500 mt-2">Auth & Validação</p>
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow rotate-90 md:rotate-0">➝</div>
+
+                    <!-- Controller -->
+                    <div class="flow-step group w-full md:w-1/5" onclick="showFlowDetail('controller')">
+                        <div class="interactive-card bg-blue-50 border border-blue-200 rounded-lg p-6 text-center h-full hover:bg-blue-100">
+                            <div class="text-3xl mb-2">⚙️</div>
+                            <h3 class="font-bold text-slate-700">Controller</h3>
+                            <p class="text-xs text-slate-500 mt-2">Lógica de Negócio</p>
+                        </div>
+                    </div>
+
+                    <div class="flow-arrow rotate-90 md:rotate-0">➝</div>
+
+                    <!-- Database -->
+                    <div class="flow-step group w-full md:w-1/5" onclick="showFlowDetail('database')">
+                        <div class="interactive-card bg-green-50 border border-green-200 rounded-lg p-6 text-center h-full hover:bg-green-100">
+                            <div class="text-3xl mb-2">💾</div>
+                            <h3 class="font-bold text-slate-700">Banco de Dados</h3>
+                            <p class="text-xs text-slate-500 mt-2">MongoDB Atlas</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Detail Panel -->
+                <div id="flow-detail-panel" class="mt-8 bg-slate-800 text-slate-100 rounded-lg p-6 hidden">
+                    <h4 id="flow-title" class="text-xl font-bold text-white mb-2">Detalhes</h4>
+                    <p id="flow-desc" class="text-slate-300 text-sm leading-relaxed"></p>
+                    <div id="flow-code" class="mt-4 bg-black/30 p-3 rounded font-mono text-xs text-green-400 overflow-x-auto"></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Roles & Permissions -->
+        <section id="roles" class="scroll-mt-24">
+            <div class="mb-6 border-l-4 border-amber-500 pl-4">
+                <h2 class="text-2xl font-bold text-slate-800">Matriz de Permissões (RBAC)</h2>
+                <p class="text-slate-600 mt-2">
+                    O sistema utiliza controle de acesso baseado em cargos. Selecione um perfil abaixo para ver o que ele pode acessar no sistema.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Role Selectors -->
+                <div class="col-span-1 space-y-3">
+                    <button onclick="filterRoles('gerente')" class="w-full text-left p-4 rounded-lg border border-purple-200 bg-purple-50 hover:bg-purple-100 transition flex items-center justify-between group focus:ring-2 ring-purple-500">
+                        <div class="font-bold text-purple-900">👔 Gerente</div>
+                        <span class="text-purple-400 group-hover:text-purple-600">➜</span>
+                    </button>
+                    <button onclick="filterRoles('supervisor')" class="w-full text-left p-4 rounded-lg border border-blue-200 bg-blue-50 hover:bg-blue-100 transition flex items-center justify-between group focus:ring-2 ring-blue-500">
+                        <div class="font-bold text-blue-900">🕵️ Supervisor</div>
+                        <span class="text-blue-400 group-hover:text-blue-600">➜</span>
+                    </button>
+                    <button onclick="filterRoles('caixa')" class="w-full text-left p-4 rounded-lg border border-green-200 bg-green-50 hover:bg-green-100 transition flex items-center justify-between group focus:ring-2 ring-green-500">
+                        <div class="font-bold text-green-900">🏪 Caixa</div>
+                        <span class="text-green-400 group-hover:text-green-600">➜</span>
+                    </button>
+                    <button onclick="filterRoles('all')" class="w-full text-left p-4 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 transition flex items-center justify-between">
+                        <div class="font-bold text-slate-700">👁️ Ver Todos</div>
+                    </button>
+                </div>
+
+                <!-- Permission Table -->
+                <div class="col-span-1 md:col-span-3 bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <table class="w-full text-sm text-left">
+                        <thead class="bg-slate-50 text-slate-500 uppercase font-bold border-b border-slate-200">
+                            <tr>
+                                <th class="px-6 py-4">Funcionalidade</th>
+                                <th class="px-6 py-4">Módulo</th>
+                                <th class="px-6 py-4 text-center">Acesso</th>
+                            </tr>
+                        </thead>
+                        <tbody id="permissions-body" class="divide-y divide-slate-100">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Modules Explorer -->
+        <section id="modules" class="scroll-mt-24">
+            <div class="mb-6 border-l-4 border-green-500 pl-4">
+                <h2 class="text-2xl font-bold text-slate-800">Explorador de Módulos</h2>
+                <p class="text-slate-600 mt-2">
+                    Detalhes técnicos de cada endpoint da API. Navegue pelas abas para ver rotas, métodos e regras de validação.
+                </p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                <!-- Tabs -->
+                <div class="flex overflow-x-auto border-b border-slate-200 bg-slate-50 px-4">
+                    <button onclick="openModule('auth')" class="module-tab active-tab px-6 py-4 font-medium text-slate-600 hover:text-slate-800 whitespace-nowrap" data-tab="auth">Autenticação</button>
+                    <button onclick="openModule('produtos')" class="module-tab px-6 py-4 font-medium text-slate-600 hover:text-slate-800 whitespace-nowrap" data-tab="produtos">Produtos</button>
+                    <button onclick="openModule('vendas')" class="module-tab px-6 py-4 font-medium text-slate-600 hover:text-slate-800 whitespace-nowrap" data-tab="vendas">Vendas</button>
+                    <button onclick="openModule('caixa')" class="module-tab px-6 py-4 font-medium text-slate-600 hover:text-slate-800 whitespace-nowrap" data-tab="caixa">Caixa</button>
+                    <button onclick="openModule('funcionarios')" class="module-tab px-6 py-4 font-medium text-slate-600 hover:text-slate-800 whitespace-nowrap" data-tab="funcionarios">Funcionários</button>
+                </div>
+
+                <!-- Content Area -->
+                <div class="p-8 min-h-[300px]">
+                    <div id="module-content">
+                        <!-- Content populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Simulated Dashboard -->
+        <section id="dashboard" class="scroll-mt-24 mb-20">
+            <div class="mb-6 border-l-4 border-purple-500 pl-4">
+                <h2 class="text-2xl font-bold text-slate-800">Simulação de Dashboard</h2>
+                <p class="text-slate-600 mt-2">
+                    Visualização dos dados que seriam retornados pelas rotas de <code>relatoriosRoutes.js</code> e <code>dashboardRoutes.js</code>. 
+                    Experimente interagir com os gráficos.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                <!-- Chart 1: Vendas por Período -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                            <span>📊</span> Vendas Recentes
+                        </h3>
+                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded">GET /relatorios/vendas-por-periodo</span>
+                    </div>
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-slate-500 text-center">
+                        Simula o volume de vendas diárias processadas pelo módulo de Vendas.
+                    </div>
+                </div>
+
+                <!-- Chart 2: Produtos Mais Vendidos -->
+                <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="font-bold text-slate-700 flex items-center gap-2">
+                            <span>🏆</span> Top Produtos
+                        </h3>
+                        <span class="text-xs font-mono bg-slate-100 px-2 py-1 rounded">GET /relatorios/produtos-mais-vendidos</span>
+                    </div>
+                    <!-- Chart Container -->
+                    <div class="chart-container">
+                        <canvas id="productsChart"></canvas>
+                    </div>
+                    <div class="mt-4 text-sm text-slate-500 text-center">
+                        Representação da saída de agregação do MongoDB para itens mais populares.
+                    </div>
+                </div>
+
+                <!-- KPI Cards -->
+                <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-blue-500 text-white p-6 rounded-xl shadow-lg hover:bg-blue-600 transition cursor-pointer" onclick="updateDashboard('today')">
+                        <div class="text-blue-100 text-sm font-medium mb-1">Vendas Hoje</div>
+                        <div class="text-3xl font-bold">R$ 4.250,00</div>
+                        <div class="text-xs mt-2 text-blue-100 bg-blue-600 inline-block px-2 py-0.5 rounded">Simular "Hoje"</div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover:border-blue-300 transition cursor-pointer" onclick="updateDashboard('week')">
+                        <div class="text-slate-500 text-sm font-medium mb-1">Vendas Semana</div>
+                        <div class="text-3xl font-bold text-slate-800">R$ 28.400,00</div>
+                        <div class="text-xs mt-2 text-slate-400">Simular "Semana"</div>
+                    </div>
+                    <div class="bg-white border border-slate-200 p-6 rounded-xl shadow-sm hover:border-blue-300 transition cursor-pointer" onclick="updateDashboard('month')">
+                        <div class="text-slate-500 text-sm font-medium mb-1">Lucro Estimado</div>
+                        <div class="text-3xl font-bold text-green-600">R$ 12.100,00</div>
+                        <div class="text-xs mt-2 text-slate-400">Apenas Gerente</div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-10 mt-10">
+        <div class="max-w-7xl mx-auto px-4 text-center text-slate-400 text-sm">
+            <p>&copy; 2025 Sistema PDV - Documentação Interativa.</p>
+            <p class="mt-2">Gerado para estudo de arquitetura e endpoints.</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- DATA STORE ---
+        
+        // 1. Architecture Details
+        const flowDetails = {
+            client: {
+                title: "1. Requisição do Cliente",
+                desc: "O Frontend ou uma ferramenta como Postman inicia uma chamada HTTP (ex: POST /api/login). O corpo da requisição traz os dados brutos (JSON).",
+                code: "POST /api/auth/login\nContent-Type: application/json\n{ \"email\": \"user@pdv.com\", \"senha\": \"******\" }"
+            },
+            routes: {
+                title: "2. Roteamento (Express)",
+                desc: "O arquivo server.js recebe a requisição e o roteador decide para onde ela vai com base na URL. É aqui que o Rate Limit atua para prevenir ataques.",
+                code: "// authRoutes.js\nrouter.post('/auth/login', authLimiter, ...);"
+            },
+            middleware: {
+                title: "3. Middleware de Segurança",
+                desc: "Antes de chegar à lógica, a requisição passa por guardas. 'Proteger' verifica o Token JWT. 'Autorizar' verifica se o cargo (Gerente/Caixa) tem permissão. 'Express-Validator' limpa os dados.",
+                code: "proteger,\nautorizar('gerente'),\n[ body('nome').notEmpty() ]"
+            },
+            controller: {
+                title: "4. Controller (Lógica)",
+                desc: "O cérebro da operação. Recebe dados validados, aplica regras de negócio (ex: 'não pode vender se estoque for 0') e prepara os dados para o banco.",
+                code: "async criarProduto(req, res) {\n  const novo = new Produto(req.body);\n  await novo.save();\n}"
+            },
+            database: {
+                title: "5. MongoDB & Cloudinary",
+                desc: "Persistência dos dados. O Mongoose salva o documento na coleção correta. Se houver upload, a imagem vai para o Cloudinary e o banco guarda apenas a URL.",
+                code: "{ _id: ObjectId('...'), nome: 'Coca Cola', estoque: 50 }"
+            }
+        };
+
+        // 2. Module Data
+        const modulesData = {
+            auth: {
+                title: "Autenticação & Segurança",
+                endpoints: [
+                    { method: "POST", url: "/registrar", role: "Public", desc: "Cria novo usuário. Rate Limit de 10 tentativas/15min." },
+                    { method: "POST", url: "/login", role: "Public", desc: "Retorna Token JWT para acesso." },
+                    { method: "GET", url: "/me", role: "Auth", desc: "Dados do perfil logado." }
+                ],
+                highlight: "Usa bcryptjs para hash de senhas e JWT para sessões stateless."
+            },
+            produtos: {
+                title: "Gestão de Produtos",
+                endpoints: [
+                    { method: "POST", url: "/", role: "Gerente, Sup", desc: "Upload de imagem + Dados. Valida preço > 0." },
+                    { method: "GET", url: "/alerta-estoque", role: "Gerente, Sup", desc: "Filtra produtos com qtde abaixo do mínimo." },
+                    { method: "DELETE", url: "/:id", role: "Gerente", desc: "Remoção lógica ou física do item." }
+                ],
+                highlight: "Integração com Cloudinary para imagens e validação rigorosa de inputs numéricos."
+            },
+            vendas: {
+                title: "Registro de Vendas",
+                endpoints: [
+                    { method: "POST", url: "/", role: "Auth", desc: "Baixa estoque atômica. Suporta múltiplos meios de pagto." },
+                    { method: "GET", url: "/", role: "Auth", desc: "Histórico de transações." }
+                ],
+                highlight: "Validação de arrays de itens: garante que todo item tem ID e quantidade válida."
+            },
+            caixa: {
+                title: "Fluxo de Caixa",
+                endpoints: [
+                    { method: "POST", url: "/abrir", role: "Todos", desc: "Define saldo inicial do dia." },
+                    { method: "POST", url: "/fechar", role: "Todos", desc: "Confronta saldo do sistema vs. saldo informado." }
+                ],
+                highlight: "Essencial para conferência financeira ao final do expediente."
+            },
+            funcionarios: {
+                title: "Administração de RH",
+                endpoints: [
+                    { method: "GET", url: "/", role: "Gerente", desc: "Listagem completa da equipe." },
+                    { method: "PUT", url: "/:id/reset-senha", role: "Gerente", desc: "Redefinição de acesso emergencial." }
+                ],
+                highlight: "Acesso restrito exclusivamente a Gerentes (Nível máximo)."
+            }
+        };
+
+        // 3. Permissions Data
+        const permissions = [
+            { func: "Registrar Venda", mod: "Vendas", roles: ["gerente", "supervisor", "caixa"] },
+            { func: "Abrir/Fechar Caixa", mod: "Caixa", roles: ["gerente", "supervisor", "caixa"] },
+            { func: "Ver Dashboard Resumo", mod: "Dashboard", roles: ["gerente", "supervisor", "caixa"] },
+            { func: "Cadastrar Produto", mod: "Produtos", roles: ["gerente", "supervisor"] },
+            { func: "Editar Produto", mod: "Produtos", roles: ["gerente", "supervisor"] },
+            { func: "Ver Alerta Estoque", mod: "Produtos", roles: ["gerente", "supervisor"] },
+            { func: "Relatório de Vendas", mod: "Relatórios", roles: ["gerente", "supervisor"] },
+            { func: "Relatório Lucratividade", mod: "Relatórios", roles: ["gerente"] },
+            { func: "Deletar Produto", mod: "Produtos", roles: ["gerente"] },
+            { func: "Gerenciar Funcionários", mod: "Funcionários", roles: ["gerente"] },
+        ];
+
+
+        // --- LOGIC ---
+
+        // 1. Flow Diagram Logic
+        function showFlowDetail(stepKey) {
+            const panel = document.getElementById('flow-detail-panel');
+            const data = flowDetails[stepKey];
+            
+            document.getElementById('flow-title').textContent = data.title;
+            document.getElementById('flow-desc').textContent = data.desc;
+            document.getElementById('flow-code').textContent = data.code;
+            
+            panel.classList.remove('hidden');
+            // simple animation
+            panel.style.opacity = 0;
+            setTimeout(() => {
+                panel.style.transition = 'opacity 0.5s';
+                panel.style.opacity = 1;
+            }, 10);
+        }
+
+        // 2. Roles Filter Logic
+        function filterRoles(role) {
+            const tbody = document.getElementById('permissions-body');
+            tbody.innerHTML = ''; // Clear
+
+            const filtered = role === 'all' 
+                ? permissions 
+                : permissions.filter(p => p.roles.includes(role));
+
+            filtered.forEach(p => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition border-b border-slate-100 last:border-0";
+                
+                // Permission Check Icon
+                const hasAccess = role === 'all' ? true : p.roles.includes(role);
+                const icon = hasAccess ? '<span class="text-green-500">✅ Permitido</span>' : '<span class="text-red-400">❌ Negado</span>';
+
+                // Badges for roles if 'all' is selected
+                let roleBadges = '';
+                if(role === 'all') {
+                    roleBadges = p.roles.map(r => {
+                        const color = r === 'gerente' ? 'purple' : r === 'supervisor' ? 'blue' : 'green';
+                        return `<span class="inline-block text-[10px] bg-${color}-100 text-${color}-800 px-2 py-0.5 rounded mr-1 capitalize">${r}</span>`;
+                    }).join('');
+                }
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-medium text-slate-700">${p.func}</td>
+                    <td class="px-6 py-4 text-slate-500">${p.mod}</td>
+                    <td class="px-6 py-4 text-center text-sm">
+                        ${role === 'all' ? roleBadges : icon}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // 3. Module Tabs Logic
+        function openModule(moduleKey) {
+            // Update UI Tabs
+            document.querySelectorAll('.module-tab').forEach(t => {
+                t.classList.remove('active-tab', 'text-blue-600');
+                if(t.dataset.tab === moduleKey) t.classList.add('active-tab');
+            });
+
+            // Update Content
+            const container = document.getElementById('module-content');
+            const data = modulesData[moduleKey];
+
+            let endpointsHtml = data.endpoints.map(ep => `
+                <div class="flex flex-col sm:flex-row gap-4 p-4 border border-slate-100 rounded bg-slate-50 mb-3 hover:border-blue-200 transition">
+                    <div class="sm:w-32 flex-shrink-0">
+                        <span class="font-mono text-xs font-bold px-2 py-1 rounded ${ep.method === 'GET' ? 'bg-blue-100 text-blue-700' : ep.method === 'POST' ? 'bg-green-100 text-green-700' : ep.method === 'DELETE' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'}">${ep.method}</span>
+                    </div>
+                    <div class="flex-grow">
+                        <code class="text-sm font-bold text-slate-700 block mb-1">${ep.url}</code>
+                        <p class="text-sm text-slate-500">${ep.desc}</p>
+                    </div>
+                    <div class="sm:w-32 flex-shrink-0 text-right">
+                        <span class="text-xs bg-slate-200 text-slate-600 px-2 py-1 rounded">${ep.role}</span>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `
+                <div class="animate-fade-in">
+                    <div class="flex justify-between items-start mb-6">
+                        <h3 class="text-2xl font-bold text-slate-800">${data.title}</h3>
+                        <div class="bg-blue-50 text-blue-800 px-3 py-1 rounded text-xs font-bold border border-blue-100">
+                            Destaque: ${data.highlight}
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+                        ${endpointsHtml}
+                    </div>
+                </div>
+            `;
+        }
+
+        // 4. Charts Logic
+        let salesChartInstance = null;
+        let productsChartInstance = null;
+
+        function initCharts() {
+            // Sales Chart (Bar)
+            const ctxSales = document.getElementById('salesChart').getContext('2d');
+            salesChartInstance = new Chart(ctxSales, {
+                type: 'bar',
+                data: {
+                    labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                    datasets: [{
+                        label: 'Vendas (R$)',
+                        data: [1200, 1900, 3000, 5000, 2000, 3500, 4250],
+                        backgroundColor: '#3b82f6',
+                        borderRadius: 4,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+
+            // Products Chart (Doughnut)
+            const ctxProducts = document.getElementById('productsChart').getContext('2d');
+            productsChartInstance = new Chart(ctxProducts, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Refrigerante', 'Salgado', 'Cerveja', 'Água', 'Doces'],
+                    datasets: [{
+                        data: [35, 25, 20, 15, 5],
+                        backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', '#6366f1', '#ec4899'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '60%',
+                    plugins: { legend: { position: 'right' } }
+                }
+            });
+        }
+
+        function updateDashboard(range) {
+            // Mock data changes
+            let newData = [];
+            if(range === 'today') newData = [100, 200, 150, 300, 500, 400, 4250];
+            if(range === 'week') newData = [1200, 1900, 3000, 5000, 2000, 3500, 4250];
+            if(range === 'month') newData = [15000, 12000, 18000, 22000, 19000, 25000, 28000];
+
+            salesChartInstance.data.datasets[0].data = newData;
+            salesChartInstance.update();
+            
+            // Visual feedback on buttons would go here (omitted for brevity)
+        }
+
+        function scrollToSection(id) {
+            document.getElementById(id).scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Initialization
+        window.onload = function() {
+            // Default architecture detail
+            showFlowDetail('client');
+            // Default filter
+            filterRoles('all');
+            // Default module
+            openModule('auth');
+            // Init Charts
+            initCharts();
+        };
+
+    </script>
+</body>
+</html>

@@ -130,3 +130,4 @@ const Funcionarios = () => {
     )
 }
 
+export default Funcionarios;

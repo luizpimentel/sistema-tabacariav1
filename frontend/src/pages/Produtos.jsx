@@ -122,14 +122,18 @@ const Produtos = () => {
 
         try {
             if (editando) {
-                await api.put(`/produtos/${editando._id}`, data);
+                await api.put('/produtos', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 toast.success('Produto atualzado! :)');
             } else {
-                await api.post('/produtos', data);
+                await api.post('/produtos', data, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
                 toast.success('Produto criado! :)');
             }
             setModalAberto(false);
-            carregarProdutos(); //Recarrega a lista
+            carregarProdutos();
         } catch (error) {
             console.error(error);
             toast.error(error.response?.data?.message || 'Erro ao salvar o produto. :( ');

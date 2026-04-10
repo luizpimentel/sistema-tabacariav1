@@ -62,7 +62,7 @@ const Dashboard = () => {
 
         // Desconecta quando sair da tela para não duplicar avisos
 
-        return () => socket.disconnect();
+        return () => { socket.disconnect(); };
     }, []);
 
     const carregarDados = async () => {

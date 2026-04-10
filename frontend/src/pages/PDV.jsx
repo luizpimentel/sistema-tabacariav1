@@ -8,6 +8,7 @@ import {
 import { toast } from 'react-toastify';
 import logoImg from '../assets/logo/Logo_DaBoa.png';
 import Comprovante from '../components/Comprovante';
+import ListaProdutos from '../components/ListaProdutos';
 
 const PDV = () => {
     // --- ESTADOS DO CAIXA ---
@@ -312,38 +313,12 @@ const PDV = () => {
             </header>
 
             {/* --- PRODUTOS --- */}
-            <div className="flex-1 overflow-y-auto p-4 pb-24 lg:pb-4">
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 lg:gap-4">
-                    {produtos
-                        .filter(p => p.nome.toLowerCase().includes(busca.toLowerCase()))
-                        .map(produto => (
-                            <div
-                                key={produto._id}
-                                onClick={() => caixaAberto && adicionarAoCarrinho(produto)}
-                                className={`
-                                    bg-white rounded-xl border border-amber-100 p-3 flex flex-col gap-2 relative group transition-all duration-200
-                                    ${!caixaAberto ? 'opacity-60 grayscale cursor-not-allowed' : 'hover:shadow-lg hover:border-amber-300 cursor-pointer'}
-                                `}
-                            >
-                                <div className="aspect-square bg-stone-50 rounded-lg overflow-hidden flex items-center justify-center relative">
-                                    {produto.imagemUrl ? (
-                                        <img src={produto.imagemUrl} alt={produto.nome} className="w-full h-full object-cover" />
-                                    ) : (
-                                        <Store className="text-amber-200" size={40} />
-                                    )}
-                                    <div className={`absolute top-1 right-1 px-1.5 py-0.5 rounded text-[10px] font-bold border shadow-sm ${produto.quantidadeEstoque > 5 ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200'}`}>
-                                        {produto.quantidadeEstoque} un
-                                    </div>
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-bold text-stone-700 leading-tight line-clamp-2 min-h-[2.5em]">{produto.nome}</h3>
-                                    <p className="text-lg font-bold text-green-700 mt-1">R$ {produto.precoVenda.toFixed(2).replace('.', ',')}</p>
-                                </div>
-                                <div className="absolute inset-0 bg-green-900/5 opacity-0 group-hover:opacity-100 rounded-xl transition-opacity pointer-events-none" />
-                            </div>
-                        ))}
-                </div>
-            </div>
+            <ListaProdutos
+                produtos={produtos}
+                busca={busca}
+                setBusca={setBusca}
+                adicionarAoCarrinho={adicionarAoCarrinho}
+            />
 
             {/* --- GAVETA DO CARRINHO --- */}
             {carrinhoAberto && (

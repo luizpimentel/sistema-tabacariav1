@@ -31,7 +31,7 @@ O backend foi desenhado focando em segurança e separação de responsabilidades
 3. **Controllers:** Executam as regras de negócio (ex: impedir venda se o estoque for zero).
 4. **Models:** Interagem diretamente com o MongoDB.
 
----
+----
 
 ## 💻 Como rodar o projeto localmente
 
